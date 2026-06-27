@@ -1,0 +1,29 @@
+// Copyright (C) 2024 Van de Walle Bastien
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
+using UnrealBuildTool;
+
+public class RecallVoxelPhysics : ModuleRules
+{
+    public RecallVoxelPhysics(ReadOnlyTargetRules Target) : base(Target)
+    {
+        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+        PublicDependencyModuleNames.AddRange(new string[] {
+            "Engine",
+            "VoxelCore",
+            "RecallCore",
+            "RecallVoxelCore",
+            "VoxelStreaming",
+            "MassCore",
+            "MassEntity",
+        });
+        PrivateDependencyModuleNames.AddRange(new string[] {
+            "Core",
+            "CoreUObject",
+            "RecallPhysicsModule",
+            "RecallVoxel",
+        });
+    }
+}

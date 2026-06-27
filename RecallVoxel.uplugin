@@ -1,0 +1,68 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "RecallVoxel",
+	"Description": "CCR Recall integration for VoxelPlugin — Save/Restore/Reset, Mass processors, Jolt physics",
+	"Category": "Gameplay",
+	"CreatedBy": "Bastien Van de Walle",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"Installed": false,
+	"EnabledByDefault": false,
+	"Modules": [
+		{
+			"Name": "RecallVoxelCore",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "RecallVoxelPhysics",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "RecallVoxel",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "RecallVoxelSurface",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "RecallVoxelAbility",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "RecallVoxelLandscape",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "RecallVoxelTestSuite",
+			"Type": "UncookedOnly",
+			"LoadingPhase": "PreDefault"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "VoxelPlugin",
+			"Enabled": true
+		},
+		{
+			"Name": "Recall",
+			"Enabled": true
+		},
+		{
+			"Name": "RecallAbility",
+			"Enabled": true
+		}
+	]
+}
