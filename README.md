@@ -1,7 +1,7 @@
 # RecallVoxel
 
 RecallVoxel is an experimental Unreal Engine plugin that adds voxel support to the
-[Recall](../Recall) simulation library using [VoxelPlugin](../VoxelPlugin).
+[Recall](../Recall/) simulation library using [VoxelPlugin](../VoxelPlugin/).
 
 > [!WARNING]
 > RecallVoxel is not production ready. Rollback support is a work in progress, and
