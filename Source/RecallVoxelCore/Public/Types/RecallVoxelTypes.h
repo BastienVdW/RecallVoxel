@@ -34,6 +34,15 @@ struct RECALLVOXELCORE_API FVoxelModifierRecord
 {
 	GENERATED_BODY()
 
+	bool operator==(const FVoxelModifierRecord& Other) const
+	{
+		return RecallHandle == Other.RecallHandle &&
+			bStatic == Other.bStatic &&
+			Data == Other.Data;
+	}
+
+	bool operator!=(const FVoxelModifierRecord& Other) const { return !(*this == Other); }
+
 	UPROPERTY()
 	FVoxelModifierData Data;
 
@@ -63,6 +72,9 @@ struct RECALLVOXELCORE_API FVoxelGridSnapshot
 	
 	UPROPERTY()
 	uint32 GridNextModifierId = 1;
+
+	UPROPERTY()
+	TSet<FIntVector> DirtyChunkCoords;
 };
 
 // Physics shape descriptor for one chunk — stored for Restore

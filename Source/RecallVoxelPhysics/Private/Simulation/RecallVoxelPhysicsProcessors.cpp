@@ -48,12 +48,11 @@ void URecallVoxelPhysicsFlushProcessor::ConfigureQueries(const TSharedRef<FMassE
 void URecallVoxelPhysicsFlushProcessor::Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context)
 {
 	const URecallVoxelSubsystem&  VoxelSystem   = Context.GetSubsystemChecked<URecallVoxelSubsystem>();
-	URecallVoxelPhysicsSubsystem& StreamingSystem = Context.GetMutableSubsystemChecked<URecallVoxelPhysicsSubsystem>();
-
-	if (!VoxelSystem.GetGrid() || VoxelSystem.GetLastBakedCoords().IsEmpty())
+	if (!VoxelSystem.GetGrid())
 	{
 		return;
 	}
 
-	StreamingSystem.OnChunksBaked(*VoxelSystem.GetGrid(), VoxelSystem.GetLastBakedCoords());
+	URecallVoxelPhysicsSubsystem& VoxelPhysics = Context.GetMutableSubsystemChecked<URecallVoxelPhysicsSubsystem>();
+	VoxelPhysics.OnChunksBaked(*VoxelSystem.GetGrid(), VoxelSystem.GetLastBakedCoords());
 }

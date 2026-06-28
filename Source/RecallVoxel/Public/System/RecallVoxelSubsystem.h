@@ -9,10 +9,11 @@
 #include "Subsystems/WorldSubsystem.h"
 #include "System/Interface/RecallSimulationReactSystemInterface.h"
 #include "Types/RecallVoxelTypes.h"
-
-class FVoxelGrid;
+#include "Containers/Queue.h"
 
 #include "RecallVoxelSubsystem.generated.h"
+
+class FVoxelGrid;
 
 struct FVoxelModifierCommand
 {
@@ -32,17 +33,21 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
-	// IRecallSimulationReactSystemInterface
+	//~ Begin IRecallSimulationReactSystemInterface Interface
 	virtual void Start(const FRecallSimulationStartParams& Params) override;
 	virtual int32 GetStartOrderPriority() const override { return Recall::SimReactSystem::StartOrder::MediumPriority; }
 	virtual void Reset() override;
 	virtual void Save(const FRecallSnapshotContext& Context, FInstancedStruct& OutSnapshot) override;
 	virtual void Restore(const FRecallSnapshotContext& Context, const FInstancedStruct& InSnapshot) override;
 	virtual void PostRestore() override;
+	//~ End IRecallSimulationReactSystemInterface Interface
 
 	// Pass-throughs to UVoxelStreamingSubsystem — use that subsystem directly when possible
 	const FVoxelGrid*         GetGrid() const;
 	const TArray<FIntVector>& GetLastBakedCoords() const;
+	
+	void StartVoxelGeneration(float DeltaTime);
+	void ForceEndVoxelGeneration();
 
 	FRecallModifierHandle AddDynamicModifier(const FVoxelModifierData& Data);
 	void RemoveDynamicModifier(FRecallModifierHandle Handle);
@@ -51,7 +56,7 @@ public:
 	void FlushModifierCommands();
 
 private:
-	void RestoreModifiers();
+	TSet<FRecallModifierHandle> RemoveDeprecatedModifiers(const TMap<FRecallModifierHandle, FVoxelModifierRecord>& NewDynamicModifiers);
 	void RemoveDynamicModifiers();
 
 	// Removes the oldest dynamic modifiers that overlap NewData's bounds, keeping at most
@@ -59,14 +64,15 @@ private:
 	void PruneOverlappingDynamicModifiers(FVoxelGrid& Grid, const FVoxelModifierData& NewData);
 
 	TWeakObjectPtr<class UVoxelStreamingSubsystem> VoxelStreamingSystem;
+	
 	uint32 NextModifierId = 0;
 	uint32 DefaultGridNextModifierId = 1;
 
 	TMap<FRecallModifierHandle, FVoxelModifierRecord> DynamicModifiers;
 	TMap<FModifierHandle, FRecallModifierHandle>      GridToRecallHandle; // reverse lookup for prune
-	TQueue<FVoxelModifierCommand>                     PendingModifierCommands;
 	
-	TArray<FRecallModifierHandle> PruneToRemoveCache;
+	TQueue<FVoxelModifierCommand>                     PendingModifierCommands;
+	TArray<FRecallModifierHandle>                     PruneToRemoveCache;
 };
 
 template<>

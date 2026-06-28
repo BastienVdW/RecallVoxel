@@ -32,6 +32,7 @@ void URecallVoxelSubsystem::Start(const FRecallSimulationStartParams& Params)
 	{
 		return;
 	}
+	
 	// Initial bake — we need to force the generation of all dirty chunks so that we can save the initial state of the voxel grid.
 	VoxelStreamingSystem->ForceEndGeneration();
 	
@@ -44,15 +45,12 @@ void URecallVoxelSubsystem::Start(const FRecallSimulationStartParams& Params)
 void URecallVoxelSubsystem::Reset()
 {
 	RemoveDynamicModifiers();
-	DynamicModifiers.Reset();
-	GridToRecallHandle.Reset();
 	NextModifierId = 0;
 
 	if (VoxelStreamingSystem.IsValid())
 	{
 		VoxelStreamingSystem->GetMutableGrid().SetNextModifierId(DefaultGridNextModifierId);
 		VoxelStreamingSystem->StartDirtyChunkGeneration();
-		VoxelStreamingSystem->ForceEndGeneration();
 	}
 }
 
@@ -61,35 +59,44 @@ void URecallVoxelSubsystem::Save(const FRecallSnapshotContext& Context, FInstanc
 	checkf(PendingModifierCommands.IsEmpty(),
 		TEXT("%hs called with unflushed modifier commands — FlushModifierCommands must be called before saving"), __FUNCTION__);
 	
-	FVoxelGridSnapshot Snapshot;
+	OutSnapshot.InitializeAs<FVoxelGridSnapshot>();
+	
+	FVoxelGridSnapshot& Snapshot = OutSnapshot.GetMutable<FVoxelGridSnapshot>();
 	Snapshot.DynamicModifiers = DynamicModifiers;
 	Snapshot.RecallNextModifierId = NextModifierId;
 	
 	if (VoxelStreamingSystem.IsValid())
 	{
-		Snapshot.GridNextModifierId = VoxelStreamingSystem->GetGrid().GetNextModifierId();
+		const FVoxelGrid& Grid = VoxelStreamingSystem->GetGrid();
+		Snapshot.GridNextModifierId = Grid.GetNextModifierId();
+		Snapshot.DirtyChunkCoords = Grid.GetDirtyChunkCoords();
 	}
-	
-	OutSnapshot = FInstancedStruct::Make<FVoxelGridSnapshot>(Snapshot);
 }
 
 void URecallVoxelSubsystem::Restore(const FRecallSnapshotContext& Context, const FInstancedStruct& InSnapshot)
 {
 	const FVoxelGridSnapshot* Snapshot = InSnapshot.GetPtr<FVoxelGridSnapshot>();
-	if (!Snapshot)
+	if (!Snapshot || !VoxelStreamingSystem.IsValid())
 	{
 		return;
 	}
 
-	RemoveDynamicModifiers();
-	DynamicModifiers = Snapshot->DynamicModifiers;
 	NextModifierId = Snapshot->RecallNextModifierId;
-	RestoreModifiers();
-	if (VoxelStreamingSystem.IsValid())
+
+	FVoxelGrid& Grid = VoxelStreamingSystem->GetMutableGrid();
+	const TSet<FRecallModifierHandle> ModifiersToAdd = RemoveDeprecatedModifiers(Snapshot->DynamicModifiers);
+
+	for (const FRecallModifierHandle RecallHandle : ModifiersToAdd)
 	{
-		VoxelStreamingSystem->GetMutableGrid().SetNextModifierId(Snapshot->GridNextModifierId);
-		VoxelStreamingSystem->StartDirtyChunkGeneration();
+		const FVoxelModifierRecord& Record = Snapshot->DynamicModifiers.FindChecked(RecallHandle);
+		Grid.AddModifier(Record.Data, Record.GridHandle.Id);
+		DynamicModifiers.Add(RecallHandle, Record);
+		GridToRecallHandle.Add(Record.GridHandle, RecallHandle);
 	}
+
+	Grid.SetNextModifierId(Snapshot->GridNextModifierId);
+	Grid.SetDirtyChunkCoords(Snapshot->DirtyChunkCoords);
+	VoxelStreamingSystem->StartDirtyChunkGeneration();
 }
 
 void URecallVoxelSubsystem::PostRestore()
@@ -100,19 +107,39 @@ void URecallVoxelSubsystem::PostRestore()
 	}
 }
 
-void URecallVoxelSubsystem::RestoreModifiers()
+TSet<FRecallModifierHandle> URecallVoxelSubsystem::RemoveDeprecatedModifiers(
+	const TMap<FRecallModifierHandle, FVoxelModifierRecord>& NewDynamicModifiers)
 {
+	TSet<FRecallModifierHandle> ModifiersToAdd;
+	NewDynamicModifiers.GetKeys(ModifiersToAdd);
+
 	if (!VoxelStreamingSystem.IsValid())
 	{
-		return;
+		return ModifiersToAdd;
 	}
+
 	FVoxelGrid& Grid = VoxelStreamingSystem->GetMutableGrid();
-	GridToRecallHandle.Reset();
-	for (auto& [RecallHandle, Rec] : DynamicModifiers)
+	
+	for (auto It = DynamicModifiers.CreateIterator(); It; ++It)
 	{
-		Rec.GridHandle = Grid.AddModifier(Rec.Data, Rec.GridHandle.Id);
-		GridToRecallHandle.Add(Rec.GridHandle, RecallHandle);
+		const FRecallModifierHandle& OldHandle = It.Key();
+		FVoxelModifierRecord& CurrentRecord = It.Value();
+		
+		const FVoxelModifierRecord* NewRecord = NewDynamicModifiers.Find(OldHandle);
+		const bool bIsPersistent = NewRecord != nullptr;
+
+		if (bIsPersistent && CurrentRecord == *NewRecord)
+		{
+			ModifiersToAdd.Remove(OldHandle);
+			continue;
+		}
+
+		Grid.RemoveModifier(CurrentRecord.GridHandle);
+		It.RemoveCurrent();
+		GridToRecallHandle.Remove(CurrentRecord.GridHandle);
 	}
+
+	return ModifiersToAdd;
 }
 
 const FVoxelGrid* URecallVoxelSubsystem::GetGrid() const
@@ -126,13 +153,32 @@ const TArray<FIntVector>& URecallVoxelSubsystem::GetLastBakedCoords() const
 	return VoxelStreamingSystem.IsValid() ? VoxelStreamingSystem->GetLastBakedCoords() : Empty;
 }
 
+void URecallVoxelSubsystem::StartVoxelGeneration(float DeltaTime)
+{
+	if (VoxelStreamingSystem.IsValid())
+	{
+		VoxelStreamingSystem->Tick(DeltaTime);
+		VoxelStreamingSystem->StartDirtyChunkGeneration();
+	}
+}
+
+void URecallVoxelSubsystem::ForceEndVoxelGeneration()
+{
+	if (VoxelStreamingSystem.IsValid())
+	{
+		VoxelStreamingSystem->ForceEndGeneration();
+	}
+}
+
 void URecallVoxelSubsystem::RemoveDynamicModifiers()
 {
 	if (!VoxelStreamingSystem.IsValid())
 	{
 		return;
 	}
+	
 	FVoxelGrid& Grid = VoxelStreamingSystem->GetMutableGrid();
+	
 	for (auto& [RecallHandle, Rec] : DynamicModifiers)
 	{
 		if (Rec.GridHandle.IsValid())
@@ -140,6 +186,8 @@ void URecallVoxelSubsystem::RemoveDynamicModifiers()
 			Grid.RemoveModifier(Rec.GridHandle);
 		}
 	}
+	
+	DynamicModifiers.Reset();
 	GridToRecallHandle.Reset();
 }
 
@@ -159,7 +207,7 @@ FRecallModifierHandle URecallVoxelSubsystem::AddDynamicModifier(const FVoxelModi
 	Record.bStatic        = false;
 
 	PendingModifierCommands.Enqueue(FVoxelModifierCommand::MakeAdd(RecallId));
-	return FRecallModifierHandle{ RecallId };
+	return Handle;
 }
 
 void URecallVoxelSubsystem::RemoveDynamicModifier(FRecallModifierHandle Handle)

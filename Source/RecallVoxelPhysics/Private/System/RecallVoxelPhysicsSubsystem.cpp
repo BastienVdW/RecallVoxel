@@ -95,6 +95,11 @@ void URecallVoxelPhysicsSubsystem::Restore(const FRecallSnapshotContext& Context
 void URecallVoxelPhysicsSubsystem::OnChunksBaked(const FVoxelGrid& Grid,
                                                  const TArray<FIntVector>& BakedCoords)
 {
+	if (BakedCoords.IsEmpty())
+	{
+		return;
+	}
+	
 	TArray<FVoxelPhysicsChunkDescriptor> Descriptors;
 	Descriptors.SetNum(BakedCoords.Num());
 	

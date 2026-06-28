@@ -7,7 +7,6 @@
 #include "Simulation/RecallVoxelProcessors.h"
 
 #include "MassExecutionContext.h"
-#include "Streaming/VoxelStreamingSubsystem.h"
 #include "Simulation/RecallVoxelProcessorGroupTypes.h"
 #include "System/RecallVoxelSubsystem.h"
 
@@ -38,15 +37,13 @@ bool URecallVoxelStreamingProcessor::ShouldAllowQueryBasedPruning(const bool bRu
 
 void URecallVoxelStreamingProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
 {
+	ProcessorRequirements.AddSubsystemRequirement<URecallVoxelSubsystem>(EMassFragmentAccess::ReadWrite);
 }
 
 void URecallVoxelStreamingProcessor::Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context)
 {
-	if (UVoxelStreamingSubsystem* StreamingSystem = UWorld::GetSubsystem<UVoxelStreamingSubsystem>(Context.GetWorld()))
-	{
-		StreamingSystem->Tick(Context.GetDeltaTimeSeconds());
-		StreamingSystem->StartDirtyChunkGeneration();
-	}
+	URecallVoxelSubsystem& VoxelSystem = Context.GetMutableSubsystemChecked<URecallVoxelSubsystem>();
+	VoxelSystem.StartVoxelGeneration(Context.GetDeltaTimeSeconds());
 }
 
 //----------------------------------------------------------------------//
@@ -76,14 +73,13 @@ bool URecallVoxelFlushProcessor::ShouldAllowQueryBasedPruning(const bool bRuntim
 
 void URecallVoxelFlushProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
 {
+	ProcessorRequirements.AddSubsystemRequirement<URecallVoxelSubsystem>(EMassFragmentAccess::ReadWrite);
 }
 
 void URecallVoxelFlushProcessor::Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context)
 {
-	if (UVoxelStreamingSubsystem* StreamingSystem = UWorld::GetSubsystem<UVoxelStreamingSubsystem>(Context.GetWorld()))
-	{
-		StreamingSystem->ForceEndGeneration();
-	}
+	URecallVoxelSubsystem& VoxelSystem = Context.GetMutableSubsystemChecked<URecallVoxelSubsystem>();
+	VoxelSystem.ForceEndVoxelGeneration();
 }
 
 //----------------------------------------------------------------------//
@@ -122,4 +118,3 @@ void URecallVoxelModifierFlushProcessor::Execute(FMassEntityManager& EntityManag
 	URecallVoxelSubsystem& VoxelSystem = Context.GetMutableSubsystemChecked<URecallVoxelSubsystem>();
 	VoxelSystem.FlushModifierCommands();
 }
-
