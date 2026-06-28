@@ -49,7 +49,7 @@ public:
     virtual void Restore(const FRecallSnapshotContext& Context, const FInstancedStruct& InSnapshot) override;
 
 #if UE_BUILD_DEBUG || UE_BUILD_DEVELOPMENT                                                                                                                                   
-	const TMap<FIntVector, FRecallPhysicsBodyHandle>& DebugGetChunkBodies() const { return ChunkBodies; }                                                                     
+	const TMap<FIntVector, FJPRPhysicsBodyHandle>& DebugGetChunkBodies() const { return ChunkBodies; }                                                                     
 #endif // UE_BUILD_DEBUG || UE_BUILD_DEVELOPMENT                                                                                                                                                                        
      
 private:
@@ -59,7 +59,7 @@ private:
     void DestroyAllPhysics();
 
     // Per-chunk Jolt body handles, populated when chunks are baked and cleared on eviction or reset.
-    TMap<FIntVector, FRecallPhysicsBodyHandle> ChunkBodies;
+    TMap<FIntVector, FJPRPhysicsBodyHandle> ChunkBodies;
 
     // Mesh descriptors — populated on each bake, used for Save and PostRestore
     TMap<FIntVector, FVoxelPhysicsChunkDescriptor> ChunkDescriptors;

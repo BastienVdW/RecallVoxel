@@ -13,7 +13,7 @@
 #include "Streaming/VoxelStreamingSubsystem.h"
 #include "System/RecallVoxelSubsystem.h"
 #include "System/Physics/RecallPhysicsSubsystem.h"
-#include "Physics/Common/RecallPhysicsCommonShapeTypes.h"
+#include "Physics/Common/JPRPhysicsCommonShapeTypes.h"
 #include "StructUtils/InstancedStruct.h"
 #include "Types/RecallVoxelTypes.h"
 #include "Voxel/VoxelTypes.h"
@@ -151,8 +151,8 @@ void URecallVoxelPhysicsSubsystem::CreateChunkPhysics(const FIntVector& ChunkCoo
 		return;
 	}
 	
-	const FRecallPhysicsMeshShape MeshShape(Desc.Vertices, Desc.Triangles);
-	const FRecallPhysicsBodyHandle Handle = RecallPhysicsSystem->CreateMutableStaticShape(MeshShape, Desc.WorldOrigin, FQuat::Identity, 0.6f);
+	const FJPRPhysicsMeshShape MeshShape(Desc.Vertices, Desc.Triangles);
+	const FJPRPhysicsBodyHandle Handle = RecallPhysicsSystem->CreateMutableStaticShape(MeshShape, Desc.WorldOrigin, FQuat::Identity, 0.6f);
 	if (Handle.IsValid())
 	{
 		checkf(!ChunkBodies.Contains(ChunkCoord), TEXT("Chunk already has a physics body"));
@@ -163,7 +163,7 @@ void URecallVoxelPhysicsSubsystem::CreateChunkPhysics(const FIntVector& ChunkCoo
 
 void URecallVoxelPhysicsSubsystem::DestroyChunkPhysics(FIntVector ChunkCoord)
 {
-    FRecallPhysicsBodyHandle Handle;
+    FJPRPhysicsBodyHandle Handle;
     if (!ChunkBodies.RemoveAndCopyValue(ChunkCoord, Handle))
     {
         return;

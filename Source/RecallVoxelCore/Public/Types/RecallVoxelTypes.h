@@ -104,7 +104,7 @@ struct RECALLVOXELCORE_API FVoxelPhysicsSnapshot
 	GENERATED_BODY()
 	
 	UPROPERTY()
-	TMap<FIntVector, FRecallPhysicsBodyHandle> ChunkBodies;
+	TMap<FIntVector, FJPRPhysicsBodyHandle> ChunkBodies;
 
 	UPROPERTY()
 	TMap<FIntVector, FVoxelPhysicsChunkDescriptor> ChunkDescriptors;
