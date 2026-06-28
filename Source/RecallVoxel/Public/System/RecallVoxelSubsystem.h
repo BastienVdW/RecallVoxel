@@ -56,7 +56,7 @@ public:
 	void FlushModifierCommands();
 
 private:
-	TSet<FRecallModifierHandle> RemoveDeprecatedModifiers(const TMap<FRecallModifierHandle, FVoxelModifierRecord>& NewDynamicModifiers);
+	TSet<FRecallModifierHandle> RemoveDeprecatedModifiers(FVoxelGrid& Grid, const TMap<FRecallModifierHandle, FVoxelModifierRecord>& NewDynamicModifiers);
 	void RemoveDynamicModifiers();
 
 	// Removes the oldest dynamic modifiers that overlap NewData's bounds, keeping at most

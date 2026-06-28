@@ -5,10 +5,10 @@
 // http://www.apache.org/licenses/LICENSE-2.0
 
 #include "System/RecallVoxelSubsystem.h"
-#include "Settings/RecallVoxelDeveloperSettings.h"
 
 #include "Engine/World.h"
 #include "Grid/VoxelGrid.h"
+#include "Settings/RecallVoxelDeveloperSettings.h"
 #include "Streaming/VoxelStreamingSubsystem.h"
 #include "StructUtils/InstancedStruct.h"
 
@@ -84,7 +84,7 @@ void URecallVoxelSubsystem::Restore(const FRecallSnapshotContext& Context, const
 	NextModifierId = Snapshot->RecallNextModifierId;
 
 	FVoxelGrid& Grid = VoxelStreamingSystem->GetMutableGrid();
-	const TSet<FRecallModifierHandle> ModifiersToAdd = RemoveDeprecatedModifiers(Snapshot->DynamicModifiers);
+	const TSet<FRecallModifierHandle> ModifiersToAdd = RemoveDeprecatedModifiers(Grid, Snapshot->DynamicModifiers);
 
 	for (const FRecallModifierHandle RecallHandle : ModifiersToAdd)
 	{
@@ -108,18 +108,11 @@ void URecallVoxelSubsystem::PostRestore()
 }
 
 TSet<FRecallModifierHandle> URecallVoxelSubsystem::RemoveDeprecatedModifiers(
-	const TMap<FRecallModifierHandle, FVoxelModifierRecord>& NewDynamicModifiers)
+	FVoxelGrid& Grid, const TMap<FRecallModifierHandle, FVoxelModifierRecord>& NewDynamicModifiers)
 {
 	TSet<FRecallModifierHandle> ModifiersToAdd;
 	NewDynamicModifiers.GetKeys(ModifiersToAdd);
 
-	if (!VoxelStreamingSystem.IsValid())
-	{
-		return ModifiersToAdd;
-	}
-
-	FVoxelGrid& Grid = VoxelStreamingSystem->GetMutableGrid();
-	
 	for (auto It = DynamicModifiers.CreateIterator(); It; ++It)
 	{
 		const FRecallModifierHandle& OldHandle = It.Key();
