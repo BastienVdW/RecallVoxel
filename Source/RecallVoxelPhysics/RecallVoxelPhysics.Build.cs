@@ -22,6 +22,7 @@ public class RecallVoxelPhysics : ModuleRules
         PrivateDependencyModuleNames.AddRange(new string[] {
             "Core",
             "CoreUObject",
+            "JoltPhysicsRuntime",
             "RecallPhysicsModule",
             "RecallVoxel",
         });
