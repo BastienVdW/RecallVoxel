@@ -28,6 +28,8 @@ void URecallVoxelSubsystem::Deinitialize()
 
 void URecallVoxelSubsystem::Start(const FRecallSimulationStartParams& Params)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelSubsystem::Start"));
+	
 	if (!VoxelStreamingSystem.IsValid())
 	{
 		return;
@@ -44,6 +46,8 @@ void URecallVoxelSubsystem::Start(const FRecallSimulationStartParams& Params)
 
 void URecallVoxelSubsystem::Reset()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelSubsystem::Reset"));
+	
 	RemoveDynamicModifiers();
 	NextModifierId = 0;
 
@@ -56,6 +60,8 @@ void URecallVoxelSubsystem::Reset()
 
 void URecallVoxelSubsystem::Save(const FRecallSnapshotContext& Context, FInstancedStruct& OutSnapshot)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelSubsystem::Save"));
+	
 	checkf(PendingModifierCommands.IsEmpty(),
 		TEXT("%hs called with unflushed modifier commands — FlushModifierCommands must be called before saving"), __FUNCTION__);
 	
@@ -75,6 +81,8 @@ void URecallVoxelSubsystem::Save(const FRecallSnapshotContext& Context, FInstanc
 
 void URecallVoxelSubsystem::Restore(const FRecallSnapshotContext& Context, const FInstancedStruct& InSnapshot)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelSubsystem::Restore"));
+	
 	const FVoxelGridSnapshot* Snapshot = InSnapshot.GetPtr<FVoxelGridSnapshot>();
 	if (!Snapshot || !VoxelStreamingSystem.IsValid())
 	{
@@ -101,6 +109,8 @@ void URecallVoxelSubsystem::Restore(const FRecallSnapshotContext& Context, const
 
 void URecallVoxelSubsystem::PostRestore()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelSubsystem::PostRestore"));
+	
 	if (VoxelStreamingSystem.IsValid())
 	{
 		VoxelStreamingSystem->ForceEndGeneration();

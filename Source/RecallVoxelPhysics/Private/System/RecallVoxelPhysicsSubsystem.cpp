@@ -54,6 +54,8 @@ void URecallVoxelPhysicsSubsystem::Deinitialize()
 
 void URecallVoxelPhysicsSubsystem::Start(const FRecallSimulationStartParams& Params)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelPhysicsSubsystem::Start"));
+	
     if (!VoxelStreamingSystem.IsValid())
     {
         return;
@@ -65,6 +67,8 @@ void URecallVoxelPhysicsSubsystem::Start(const FRecallSimulationStartParams& Par
 
 void URecallVoxelPhysicsSubsystem::Reset()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelPhysicsSubsystem::Reset"));
+	
     ChunkBodies.Reset();
     ChunkDescriptors.Reset();
 }
@@ -72,6 +76,8 @@ void URecallVoxelPhysicsSubsystem::Reset()
 void URecallVoxelPhysicsSubsystem::Save(const FRecallSnapshotContext& Context,
                                          FInstancedStruct& OutSnapshot)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelPhysicsSubsystem::Save"));
+	
     OutSnapshot = FInstancedStruct::Make<FVoxelPhysicsSnapshot>();
 	
 	FVoxelPhysicsSnapshot& Snapshot = OutSnapshot.GetMutable<FVoxelPhysicsSnapshot>();
@@ -82,6 +88,8 @@ void URecallVoxelPhysicsSubsystem::Save(const FRecallSnapshotContext& Context,
 void URecallVoxelPhysicsSubsystem::Restore(const FRecallSnapshotContext& Context,
                                              const FInstancedStruct& InSnapshot)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelPhysicsSubsystem::Restore"));
+	
     const FVoxelPhysicsSnapshot* Snapshot = InSnapshot.GetPtr<FVoxelPhysicsSnapshot>();
     if (!Snapshot)
     {

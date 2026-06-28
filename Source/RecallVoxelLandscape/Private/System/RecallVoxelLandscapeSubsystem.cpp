@@ -24,11 +24,14 @@ void URecallVoxelLandscapeSubsystem::Initialize(FSubsystemCollectionBase& Collec
 
 void URecallVoxelLandscapeSubsystem::Start(const FRecallSimulationStartParams& Params)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelLandscapeSubsystem::Start"));
     // Landscape regenerates from the modifier grid — no action needed on start.
 }
 
 void URecallVoxelLandscapeSubsystem::Reset()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelLandscapeSubsystem::Reset"));
+	
     if (LandscapeSystem.IsValid())
     {
         LandscapeSystem->ClearAllCells();
@@ -38,6 +41,8 @@ void URecallVoxelLandscapeSubsystem::Reset()
 void URecallVoxelLandscapeSubsystem::Save(const FRecallSnapshotContext& Context,
                                            FInstancedStruct& OutSnapshot)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelLandscapeSubsystem::Save"));
+	
 	checkf(PendingBrushes.IsEmpty() && PendingCapsuleBrushes.IsEmpty(), TEXT("Brush queue should be flushed before saving snapshot!"));
 
     OutSnapshot.InitializeAs<FVoxelLandscapeSnapshot>();
@@ -54,6 +59,8 @@ void URecallVoxelLandscapeSubsystem::Save(const FRecallSnapshotContext& Context,
 void URecallVoxelLandscapeSubsystem::Restore(const FRecallSnapshotContext& Context,
                                               const FInstancedStruct& InSnapshot)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelLandscapeSubsystem::Restore"));
+	
 	const FVoxelLandscapeSnapshot* Snap = InSnapshot.GetPtr<FVoxelLandscapeSnapshot>();
 	if (!Snap)
 	{

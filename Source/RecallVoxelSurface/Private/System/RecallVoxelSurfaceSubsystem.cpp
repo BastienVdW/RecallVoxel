@@ -25,6 +25,8 @@ void URecallVoxelSurfaceSubsystem::Initialize(FSubsystemCollectionBase& Collecti
 
 void URecallVoxelSurfaceSubsystem::Start(const FRecallSimulationStartParams& Params)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelSurfaceSubsystem::Start"));
+	
 	if (StreamingSystem.IsValid() && SurfaceSystem.IsValid())
 	{
 		const FVoxelGrid& Grid = StreamingSystem->GetGrid();
@@ -35,6 +37,8 @@ void URecallVoxelSurfaceSubsystem::Start(const FRecallSimulationStartParams& Par
 
 void URecallVoxelSurfaceSubsystem::Reset()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelSurfaceSubsystem::Reset"));
+	
 	if (SurfaceSystem.IsValid())
 	{
 		SurfaceSystem->SetAllSurfaceChunks({});
@@ -43,6 +47,8 @@ void URecallVoxelSurfaceSubsystem::Reset()
 
 void URecallVoxelSurfaceSubsystem::Save(const FRecallSnapshotContext& Context, FInstancedStruct& OutSnapshot)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelSurfaceSubsystem::Save"));
+	
 	FVoxelSurfaceSnapshot Snap;
 
 	if (SurfaceSystem.IsValid())
@@ -55,6 +61,8 @@ void URecallVoxelSurfaceSubsystem::Save(const FRecallSnapshotContext& Context, F
 
 void URecallVoxelSurfaceSubsystem::Restore(const FRecallSnapshotContext& Context, const FInstancedStruct& InSnapshot)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelSurfaceSubsystem::Restore"));
+	
 	const FVoxelSurfaceSnapshot* Snap = InSnapshot.GetPtr<FVoxelSurfaceSnapshot>();
 	if (!Snap || !SurfaceSystem.IsValid())
 	{
