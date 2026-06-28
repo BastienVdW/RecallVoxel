@@ -7,6 +7,7 @@
 #include "Simulation/RecallVoxelPhysicsDebugProcessor.h"
 
 #include "MassExecutionContext.h"
+#include "Physics/JPRPhysicsBody.h"
 #include "System/RecallVoxelPhysicsSubsystem.h"
 #include "System/RecallVoxelViewSubsystem.h"
 #include "System/Physics/RecallPhysicsSubsystem.h"
@@ -75,8 +76,8 @@ void URecallVoxelPhysicsDebugProcessor::Execute(FMassEntityManager& EntityManage
 
 	for (const auto& [ChunkCoord, Handle] : VoxelPhysicsSystem.DebugGetChunkBodies())
 	{
-		const TWeakPtr<const FRecallPhysicsBody> Body = PhysicsSystem.GetBody(Handle);
-		const TSharedPtr<const FRecallPhysicsBody> PinnedBody = Body.Pin();
+		const FConstRecallPhysicsBodyView Body = PhysicsSystem.GetBody(Handle);
+		const TSharedPtr<const FJPRPhysicsBody> PinnedBody = Body.Pin();
 		if (!PinnedBody.IsValid())
 		{
 			continue;
