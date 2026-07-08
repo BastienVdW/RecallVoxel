@@ -12,16 +12,18 @@
 #include "RecallVoxelSurfaceTypes.generated.h"
 
 /**
- * Lightweight snapshot of UVoxelSurfaceSubsystem state.
- * Only stores FVoxelSurfaceChunk column data — no rendered meshes.
- * Captured at each recall keyframe; restored before the landscape processor
- * runs so URecallVoxelLandscapeSubsystem reads coherent surface heights.
+ * Snapshot of UVoxelSurfaceSubsystem state captured at each recall keyframe.
+ *
+ * Snapshot saves populate FullChunks (full copy, infrequent).
+ * Rollback saves leave FullChunks empty — the subsystem restores from its
+ * locally-maintained undo queue instead, which is never serialized.
  */
 USTRUCT()
 struct RECALLVOXELSURFACE_API FVoxelSurfaceSnapshot
 {
 	GENERATED_BODY()
 
+	/** Full chunk map — populated on snapshot saves only. */
 	UPROPERTY()
-	TMap<FIntVector2, FVoxelSurfaceChunk> SurfaceChunks;
+	TMap<FIntVector2, FVoxelSurfaceChunk> FullChunks;
 };

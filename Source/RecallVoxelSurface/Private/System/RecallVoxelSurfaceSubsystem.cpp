@@ -38,22 +38,29 @@ void URecallVoxelSurfaceSubsystem::Start(const FRecallSimulationStartParams& Par
 void URecallVoxelSurfaceSubsystem::Reset()
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelSurfaceSubsystem::Reset"));
-	
+
 	if (SurfaceSystem.IsValid())
 	{
 		SurfaceSystem->SetAllSurfaceChunks({});
 	}
+
+	CachedUndoQueue.Reset();
 }
 
 void URecallVoxelSurfaceSubsystem::Save(const FRecallSnapshotContext& Context, FInstancedStruct& OutSnapshot)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelSurfaceSubsystem::Save"));
-	
+
+	if (Context.IsRollback())
+	{
+		return;
+	}
+
 	FVoxelSurfaceSnapshot Snap;
 
 	if (SurfaceSystem.IsValid())
 	{
-		Snap.SurfaceChunks = SurfaceSystem->GetAllSurfaceChunks();
+		Snap.FullChunks = SurfaceSystem->GetAllSurfaceChunks();
 	}
 
 	OutSnapshot = FInstancedStruct::Make<FVoxelSurfaceSnapshot>(MoveTemp(Snap));
@@ -62,32 +69,81 @@ void URecallVoxelSurfaceSubsystem::Save(const FRecallSnapshotContext& Context, F
 void URecallVoxelSurfaceSubsystem::Restore(const FRecallSnapshotContext& Context, const FInstancedStruct& InSnapshot)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE_STR(TEXT("URecallVoxelSurfaceSubsystem::Restore"));
-	
+
 	const FVoxelSurfaceSnapshot* Snap = InSnapshot.GetPtr<FVoxelSurfaceSnapshot>();
 	if (!Snap || !SurfaceSystem.IsValid())
 	{
 		return;
 	}
 
-	// Directly overwrite the subsystem's surface chunk map so landscape reads coherent heights.
 	// Rendered mesh is left intentionally stale for one frame — normal dirty-chunk generation
-	// will rebuild it asynchronously without blocking the restore path.
-	SurfaceSystem->SetAllSurfaceChunks(Snap->SurfaceChunks);
+	// rebuilds it asynchronously without blocking the restore path.
+	if (Context.IsSnapshot())
+	{
+		SurfaceSystem->SetAllSurfaceChunks(Snap->FullChunks);
+		CachedUndoQueue.Reset();
+	}
+	else
+	{
+		TMap<FIntVector2, FVoxelSurfaceChunk> State = SurfaceSystem->GetAllSurfaceChunks();
+		CachedUndoQueue.RestoreTo(Context.Frame, State);
+		SurfaceSystem->SetAllSurfaceChunks(State);
+	}
 }
 
-void URecallVoxelSurfaceSubsystem::StartSurfaceGeneration()
+void URecallVoxelSurfaceSubsystem::StartSurfaceGeneration(uint32 Frame)
 {
-	if (StreamingSystem.IsValid() && SurfaceSystem.IsValid())
+	if (!StreamingSystem.IsValid() || !SurfaceSystem.IsValid())
 	{
-		const FVoxelGrid& Grid = StreamingSystem->GetGrid();
-		SurfaceSystem->StartSurfaceGeneration(Grid, Grid.GetDirtyChunks());
+		return;
 	}
+
+	const FVoxelGrid& Grid = StreamingSystem->GetGrid();
+	const TArray<FIntVector> DirtyCoords = Grid.GetDirtyChunks();
+
+	// Snapshot pre-generation state of the surface columns about to be regenerated.
+	PendingPreState.Reset();
+	PendingDirtyCoords.Reset();
+	PendingFrame = Frame;
+	const TMap<FIntVector2, FVoxelSurfaceChunk>& Current = SurfaceSystem->GetAllSurfaceChunks();
+	for (const FIntVector& Coord : DirtyCoords)
+	{
+		const FIntVector2 Coord2D(Coord.X, Coord.Y);
+		PendingDirtyCoords.Add(Coord2D);
+		if (const FVoxelSurfaceChunk* Chunk = Current.Find(Coord2D))
+		{
+			PendingPreState.Add(Coord2D, *Chunk);
+		}
+		// No entry = chunk did not exist before; PushDiff will record it as new (undo = remove).
+	}
+
+	SurfaceSystem->StartSurfaceGeneration(Grid, DirtyCoords);
 }
 
 void URecallVoxelSurfaceSubsystem::ForceEndSurfaceGeneration()
 {
-	if (SurfaceSystem.IsValid())
+	if (!SurfaceSystem.IsValid())
 	{
-		SurfaceSystem->ForceEndSurfaceGeneration();
+		return;
+	}
+
+	SurfaceSystem->ForceEndSurfaceGeneration();
+
+	if (!PendingDirtyCoords.IsEmpty())
+	{
+		// Build post-state restricted to dirty coords so PushDiff doesn't scan the entire chunk map.
+		TMap<FIntVector2, FVoxelSurfaceChunk> PostState;
+		const TMap<FIntVector2, FVoxelSurfaceChunk>& AllChunks = SurfaceSystem->GetAllSurfaceChunks();
+		for (const FIntVector2& Coord : PendingDirtyCoords)
+		{
+			if (const FVoxelSurfaceChunk* Chunk = AllChunks.Find(Coord))
+			{
+				PostState.Add(Coord, *Chunk);
+			}
+		}
+
+		CachedUndoQueue.PushDiff(PendingFrame, PendingPreState, PostState);
+		PendingPreState.Reset();
+		PendingDirtyCoords.Reset();
 	}
 }

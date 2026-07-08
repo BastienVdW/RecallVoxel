@@ -8,6 +8,8 @@
 
 #include "Subsystems/WorldSubsystem.h"
 #include "System/Interface/RecallSimulationReactSystemInterface.h"
+#include "Util/RecallUndoQueue.h"
+#include "VoxelSurfaceTypes.h"
 
 #include "RecallVoxelSurfaceSubsystem.generated.h"
 
@@ -26,7 +28,7 @@ class RECALLVOXELSURFACE_API URecallVoxelSurfaceSubsystem : public UWorldSubsyst
 	GENERATED_BODY()
 
 public:
-	void StartSurfaceGeneration();
+	void StartSurfaceGeneration(uint32 Frame);
 	void ForceEndSurfaceGeneration();
 	
 public:
@@ -41,6 +43,13 @@ public:
 private:
 	TWeakObjectPtr<class UVoxelStreamingSubsystem> StreamingSystem;
 	TWeakObjectPtr<class UVoxelSurfaceSubsystem> SurfaceSystem;
+
+	TRecallUndoQueue<FIntVector2, FVoxelSurfaceChunk> CachedUndoQueue;
+
+	// Populated in StartSurfaceGeneration; consumed in ForceEndSurfaceGeneration to push a diff.
+	TMap<FIntVector2, FVoxelSurfaceChunk> PendingPreState;
+	TArray<FIntVector2> PendingDirtyCoords;
+	uint32 PendingFrame = 0;
 };
 
 template<>
