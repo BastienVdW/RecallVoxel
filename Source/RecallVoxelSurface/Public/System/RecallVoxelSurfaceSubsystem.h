@@ -28,7 +28,7 @@ class RECALLVOXELSURFACE_API URecallVoxelSurfaceSubsystem : public UWorldSubsyst
 	GENERATED_BODY()
 
 public:
-	void StartSurfaceGeneration(uint32 Frame);
+	void StartSurfaceGeneration();
 	void ForceEndSurfaceGeneration();
 	
 public:
@@ -49,7 +49,6 @@ private:
 	// Populated in StartSurfaceGeneration; consumed in ForceEndSurfaceGeneration to push a diff.
 	TMap<FIntVector2, FVoxelSurfaceChunk> PendingPreState;
 	TArray<FIntVector2> PendingDirtyCoords;
-	uint32 PendingFrame = 0;
 };
 
 template<>

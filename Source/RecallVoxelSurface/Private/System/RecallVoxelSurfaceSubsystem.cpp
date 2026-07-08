@@ -11,6 +11,7 @@
 #include "StructUtils/InstancedStruct.h"
 #include "System/VoxelSurfaceSubsystem.h"
 #include "Types/RecallVoxelSurfaceTypes.h"
+#include "Utility/Simulation/RecallSimulationUtils.h"
 
 void URecallVoxelSurfaceSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -91,7 +92,7 @@ void URecallVoxelSurfaceSubsystem::Restore(const FRecallSnapshotContext& Context
 	}
 }
 
-void URecallVoxelSurfaceSubsystem::StartSurfaceGeneration(uint32 Frame)
+void URecallVoxelSurfaceSubsystem::StartSurfaceGeneration()
 {
 	if (!StreamingSystem.IsValid() || !SurfaceSystem.IsValid())
 	{
@@ -104,7 +105,7 @@ void URecallVoxelSurfaceSubsystem::StartSurfaceGeneration(uint32 Frame)
 	// Snapshot pre-generation state of the surface columns about to be regenerated.
 	PendingPreState.Reset();
 	PendingDirtyCoords.Reset();
-	PendingFrame = Frame;
+	
 	const TMap<FIntVector2, FVoxelSurfaceChunk>& Current = SurfaceSystem->GetAllSurfaceChunks();
 	for (const FIntVector& Coord : DirtyCoords)
 	{
@@ -142,7 +143,8 @@ void URecallVoxelSurfaceSubsystem::ForceEndSurfaceGeneration()
 			}
 		}
 
-		CachedUndoQueue.PushDiff(PendingFrame, PendingPreState, PostState);
+		const uint32 Frame = Recall::Simulation::Utils::GetFrame(this);
+		CachedUndoQueue.PushDiff(Frame, PendingPreState, PostState);
 		PendingPreState.Reset();
 		PendingDirtyCoords.Reset();
 	}
